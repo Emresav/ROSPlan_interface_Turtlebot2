@@ -45,7 +45,7 @@ namespace KCL_rosplan {
 				// add predicate
 				rosplan_knowledge_msgs::KnowledgeUpdateService updatePredSrv;
 				updatePredSrv.request.update_type = rosplan_knowledge_msgs::KnowledgeUpdateService::Request::ADD_KNOWLEDGE;
-				updatePredSrv.request.knowledge.knowledge_type = rosplan_knowledge_msgs::KnowledgeItem::DOMAIN_ATTRIBUTE;
+				updatePredSrv.request.knowledge.knowledge_type = rosplan_knowledge_msgs::KnowledgeItem::FACT;
 				updatePredSrv.request.knowledge.attribute_name = "docked";
 				diagnostic_msgs::KeyValue pair;
 				pair.key = "v";
@@ -97,7 +97,6 @@ namespace KCL_rosplan {
 			geometry_msgs::Twist base_cmd;
 			base_cmd.linear.y = base_cmd.angular.z = 0;   
 			base_cmd.linear.x = -0.25;
-
 			int count = 0;
 			ros::Rate rate(10.0);
 			while (ros::ok() && count < 10) { 
@@ -107,10 +106,12 @@ namespace KCL_rosplan {
 				count++;
 			}
 
-			// predicate
+			ROS_INFO("KCL: (Localiser) action complete");
+
+			// add predicate
 			rosplan_knowledge_msgs::KnowledgeUpdateService updatePredSrv;
 			updatePredSrv.request.update_type = rosplan_knowledge_msgs::KnowledgeUpdateService::Request::ADD_KNOWLEDGE;
-			updatePredSrv.request.knowledge.knowledge_type = rosplan_knowledge_msgs::KnowledgeItem::DOMAIN_ATTRIBUTE;
+			updatePredSrv.request.knowledge.knowledge_type = rosplan_knowledge_msgs::KnowledgeItem::FACT;
 			updatePredSrv.request.knowledge.attribute_name = "undocked";
 			diagnostic_msgs::KeyValue pair;
 			pair.key = "v";
@@ -118,15 +119,18 @@ namespace KCL_rosplan {
 			updatePredSrv.request.knowledge.values.push_back(pair);
 			update_knowledge_client.call(updatePredSrv);
 
-			ROS_INFO("KCL: (Localiser) action complete");
-
+			// remove predicate
+			updatePredSrv.request.update_type = rosplan_knowledge_msgs::KnowledgeUpdateService::Request::REMOVE_KNOWLEDGE;
+			updatePredSrv.request.knowledge.attribute_name = "docked";
+			update_knowledge_client.call(updatePredSrv);
+			
+			ros::spinOnce();
 			ros::Rate big_rate(0.5);
 			big_rate.sleep();
 
 			// publish feedback (achieved)
 			fb.status = "action achieved";
 			action_feedback_pub.publish(fb);
-
 		}
 	}
 } // close namespace
